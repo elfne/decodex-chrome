@@ -31,9 +31,11 @@
    ╙▓█Γ              █▓▄ ██▀            ▓▌ ██▀Γ             ▀█▄╦ ▀██▀
                       ╙▀                ▀`                     ▀▀
  */
-
 (function decodexInfobulle(){
     'use strict';
+
+    var infobulle;
+    var removeTimeout;
 
     var messages = [
         "Attention, ce site n&rsquo;est pas une source &agrave; proprement parler ou sa fiabilit&eacute; est trop variable pour entrer dans nos crit&egrave;res. Pour en savoir plus, cherchez d&rsquo;autres sources et remontez &agrave; l&rsquo;origine de l&rsquo;information.",
@@ -67,8 +69,25 @@
 
 
     // Helpers function
+    function closeInfoBulle(){
+        clearTimeout(removeTimeout);
+        infobulle.style.opacity = 0;
+        infobulle.style.transform = 'translate(0,-100%)';
+        removeTimeout = setTimeout(function(){
+            removeElement(infobulle);
+        }, 1000);
+    }
+
+    function clearRemoveTimeout(){
+        clearTimeout(removeTimeout);
+    }
+
+    function removeAterTime(){
+        removeTimeout = setTimeout(closeInfoBulle, removeAfter);
+    }
+
     function removeElement(elem){
-        elem.parentNode.removeChild(elem);
+        if(elem) elem.parentNode.removeChild(elem);
     }
 
     function forEach(arr, fn){
@@ -108,9 +127,13 @@
         return elem;
     }
 
+
     chrome.runtime.onMessage.addListener(
       function(request, sender, sendResponse) {
-        console.log('message reçu');
+        // Supprimer infobulle si existant
+        clearRemoveTimeout();
+        removeElement(infobulle);
+
         if (request.text.indexOf("debunker") != -1 ){
             var note = parseInt(request.text.replace('debunker', ''));
             // Ajout du contenu
@@ -124,14 +147,14 @@
             var body = document.querySelector('body');
 
             // Création de la structure du popup
-            var infobulle = createChild(body, 'div');
+            infobulle = createChild(body, 'div');
                 var header = createChild(infobulle, 'header');
                     var title = createChild(header, 'h1');
                         var picto = createChild(title, 'span');
                     var close = createChild(header, 'div');
                 var content = createChild(infobulle, 'div');
                     var text = createChild(content, 'div');
-                    var more = createChild(content, 'div');
+                    var more = createChild(content, 'p');
 
             // Ajout du style
             var removeAfter = 10000; // En milliseconde
@@ -254,47 +277,27 @@
             text.innerHTML = messages[note];
             more.innerHTML = "<span style='vertical-align:middle;'>+ d'infos en cliquant sur &nbsp;</span>" + "<img style='vertical-align:middle;' src='" + icones[note] + "'>";
             // Bind des event au clique
-            var removeTimeout;
-
-            function closeInfoBulle(){
-                clearTimeout(removeTimeout);
-                infobulle.style.opacity = 0;
-                infobulle.style.transform = 'translate(0,-100%)';
-                removeTimeout = setTimeout(function(){
-                    removeElement(infobulle);
-                }, 1000);
-            }
-
-            function clearRemoveTimeout(){
-                clearTimeout(removeTimeout);
-            }
-
-            function removeAterTime(){
-                removeTimeout = setTimeout(closeInfoBulle, removeAfter);
-            }
 
             close.addEventListener('click', closeInfoBulle);
             infobulle.addEventListener('mouseenter', clearRemoveTimeout);
             infobulle.addEventListener('mouseleave', removeAterTime);
             removeAterTime();
         }
-        /*else {
-            console.log("IN ELSE");
+        else {
             if (request.text == 'report_back') {
                sendResponse({farewell: document.querySelector(".yt-user-info").getElementsByTagName('a')[0].href});
-                console.log("URL CHANNEL ---> " + document.querySelector(".yt-user-info").getElementsByTagName('a')[0].href + " <----");
-                return true;
+               //console.log("URL CHANNEL ---> " + document.querySelector(".yt-user-info"));
             }
 
-        }*/
+        }
       });
 
-    chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+    /*chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (msg.text === 'report_back') {
-            sendResponse({farewell: document.querySelector(".yt-user-info").getElementsByTagName('a')[0].href});
-            console.log("URL CHANNEL ---> " + document.querySelector(".yt-user-info").getElementsByTagName('a')[0].href);
+            sendResponse({farewell: document.getElementsByClassName("yt-user-info")[0].getElementsByTagName('a')[0].href});
+            //console.log("URL CHANNEL ---> " + document.getElementsByClassName("yt-user-info")[0].getElementsByTagName('a')[0].href);
         }
-    });
+    });*/
 
 })();
 
